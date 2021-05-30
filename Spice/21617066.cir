@@ -1,0 +1,103 @@
+* SPICE model for power amplifier
+*-------------------------------------------------------------
+* Author: AP Lotriet
+* SU student number : 21617066
+* Last mod: 21 April 2021
+*=============================================================
+* Description: This Class-AB is used to show (non-)compliance
+* specifications and tests for Electronics 315 practical 3
+*=============================================================
+
+* YOUR CIRCUIT MUST INCLUDE:
+* 1. A voltage source (DC 0) in series with the emitter of Qn, named Vicn, to measure I_{CQn}.
+*    Its POSITIVE node must be connected to the emitter of Qn, and named "qne"
+*      Example:  Vicn qne nodewhatever  DC  0
+* 2. A voltage source (DC 0) in series with the emitter of Qp, named Vicp, to measure I_{CQp}.
+*    Its NEGATIVE node must be connected to the emitter of Qp, and named "qpe"
+*      Example:  Vicp nodewhateverelse  qpe  DC  0
+
+* Include the transistor models as an external file ("models.cir"); these are standard for the module
+.include models.cir
+
+* Define amplifier as a subcircuit to avoid node name clashes in test bench
+* subckt name must be "audioamp"
+* ---------------------------------------------------------------------------------------------
+* Pin sequence must be:  SignalInput+, SpeakerOut+, SpeakerOut-, SupplyVoltage+, SupplyVoltage-
+* ---------------------------------------------------------------------------------------------
+
+.subckt  audioamp  in  out  outn  vcc  vee 
+
+* Finally, your circuit is defined below:
+
+* Class-AB stage
+
+* Vcc vcc 0  20
+* Vee vee 0  -20
+* Vin in 0 sin 0 0.5 5k
+
+* Current source
+Re 	vcc 	q5e 	3.3k
+R3 	vcc 	q5b 	39k
+R4 	q5b		0		150k
+Q5 	q5c 	q5b 	q5e		t2N2905A
+
+* Vbe multiplier
+R1	q5c		q6b 	4.3k 
+R2	q6b 	q6e 	1.3k 
+Q6 	q5c 	q6b		q6e 	t2N2219A
+
+* Sink transistor
+R5	vcc 	q7b 	1000k
+R6	q7b		vee 	820k
+Q7 	vee 	q7b 	q6e		t2N2905A
+
+* Drarlington pair
+Q1 		vcc 	q5c 	q1e 	t2N2219A
+Q2		vcc 	q1e 	qne 	TIP41C
+Q4 		vee 	q4b 	qpe 	TIP42C
+Q3  	vee 	q6e 	q4b 	t2N2905A
+
+Vicn	qne		noden	0
+Rf1		noden	outb	0.1m
+Viout	outb		1	0
+Rf2		outb	nodep	0.1m
+Vicp	nodep	qpe		0
+
+Cpwrout 1 		out 	4700u
+Cpwrin	outpre 	q7b	 	100u
+* Rl 		out 	outn	8 		
+
+* Preamp
+Cin 	in 		q8b		100u
+R7 		vcc 	q8b 	190k
+R8 		vee 	q8b 	6.4k
+Rc 		vcc 	outpre 	19k 
+Rep		vee 	q8e 	600
+Q8 		outpre	q8b 	q8e 	t2N2219A
+
+* low resistance speaker connection to ground (to avoid putting "0" in the .subckt line
+
+Rcable outn 0  1m
+* .control
+* 	TRAN 	1um	5m  0m
+* 	let Pl = V(out)*I(Viout)
+* 	let Pqp = (vcc*I(Vicn))
+* 	plot Pl Pqp 
+* 	plot V(out)
+* 	plot I(Vicn)  I(Vicp)
+* 	plot V(q7b) V(outpre) V(q6e)
+
+	 
+	
+* 	* plot V(q8b)
+* 	meas tran Voutmax max v(out)
+* 	meas tran Voutmin min v(out)
+* 	let VoutQ = Voutmax + Voutmin
+* 	print VoutQ
+* .endc
+
+* .end
+.ends
+* ============================================
+
+
